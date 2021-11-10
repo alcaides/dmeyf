@@ -1,0 +1,117 @@
+```{r}
+#Arbol elemental con libreria  rpart
+require("data.table")
+require("caret")
+require("rpart")
+
+require("ggplot2")
+
+#Aqui se debe poner la carpeta de la computadora local
+setwd("/home/santi/academico/maestria/dmeyf")  #Establezco el Working Directory
+
+#cargo los datos de 202009 que es donde voy a ENTRENAR el modelo
+dtrain  <- fread("./datasetsOri/paquete_premium_202009.csv")
+```
+```{r}
+dtrain = dtrain[,-c(1,2)]
+dtrain = dtrain[,-c("ccajeros_propios_descuentos", "mcajeros_propios_descuentos", "ctarjeta_visa_descuentos", "mtarjeta_visa_descuentos", "ctarjeta_master_descuentos", "mtarjeta_master_descuentos")]
+dtrain = dtrain[complete.cases(dtrain$clase_ternaria),]
+#dtrain$clase_ternaria = as.factor(dtrain$clase_ternaria)
+head(dtrain)
+```
+
+```{r}
+class(dtrain)
+```
+
+```{r}
+set.seed(5)
+inTraining <- createDataPartition(dtrain$clase_ternaria, p=.8, list = FALSE)
+training <- dtrain[inTraining,]
+testing <- dtrain[-inTraining,]
+```
+
+```{r}
+fitControl <- trainControl(## 10-fold CV
+                           method = "cv",
+                           number = 2,
+                           #repeats = 10
+                           )
+```
+
+```{r}
+table(dtrain$clase_ternaria)
+table(training$clase_ternaria)
+table(testing$clase_ternaria)
+```
+```{r}
+testing = as.data.frame(testing)
+```
+
+```{r}
+set.seed(5)
+gbmFit1 <- train(clase_ternaria ~., data = testing,
+                 method = "rpart",
+                 control = rpart.control(xval=1,cp=-0.3,minsplit=80,
+                                         minbucket=1,maxdepth=8),
+                 #verbose = TRUE,
+                 na.action = na.pass
+                 )
+gbmFit1
+```
+
+```{r}
+modelo  <- rpart("clase_ternaria ~ .",
+                 data = dtrain,
+                 xval=0,
+                 cp=        -0.3, 
+                 minsplit=  80,
+                 minbucket=  1,
+                 maxdepth=   8 )
+```
+
+```{r}
+dim(training)
+dim(training[complete.cases(training$clase_ternaria),])
+```
+
+
+```{r}
+rpart.plot(tree1,box.palette = "green")
+rpart.plot(tree1)
+plotcp(tree1)
+```
+
+```{r}
+#genero el modelo
+modelo  <- rpart("clase_ternaria ~ .",
+                 data = dtrain,
+                 xval=0,
+                 cp=        -0.3, 
+                 minsplit=  80,
+                 minbucket=  1,
+                 maxdepth=   8 )
+```
+
+
+```{r}
+#aplico al modelo  a los datos de 202011
+
+#cargo los datos de 202011, que es donde voy a APLICAR el modelo
+dapply  <- fread("./datasetsOri/paquete_premium_202011.csv")
+
+prediccion  <- predict( modelo, dapply , type = "prob") #aplico el modelo
+
+#prediccion es una matriz con TRES columnas, llamadas "BAJA+1", "BAJA+2"  y "CONTINUA"
+#cada columna es el vector de probabilidades 
+
+dapply[ , prob_baja2 := prediccion[, "BAJA+2"] ]
+dapply[ , Predicted  := as.numeric(prob_baja2 > 0.025) ]
+
+entrega  <- dapply[   , list(numero_de_cliente, Predicted) ] #genero la salida
+
+#genero el archivo para Kaggle
+fwrite( entrega, file="./kaggle/K101_001.csv", sep="," )
+
+```
+
