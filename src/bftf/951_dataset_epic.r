@@ -32,16 +32,16 @@ palancas$nuevasvars <-  FALSE  #si quiero hacer Feature Engineering manual
 
 palancas$dummiesNA  <-  FALSE #La idea de Santiago Dellachiesa
 
-palancas$lag1   <- FALSE    #lag de orden 1
-palancas$delta1 <- FALSE    # campo -  lag de orden 1 
+palancas$lag1   <- TRUE    #lag de orden 1
+palancas$delta1 <- TRUE    # campo -  lag de orden 1 
 palancas$lag2   <- FALSE
 palancas$delta2 <- FALSE
 palancas$lag3   <- FALSE
 palancas$delta3 <- FALSE
 palancas$lag4   <- FALSE
 palancas$delta4 <- FALSE
-palancas$lag5   <- FALSE
-palancas$delta5 <- FALSE
+palancas$lag5   <- TRUE
+palancas$delta5 <- TRUE
 palancas$lag6   <- FALSE
 palancas$delta6 <- FALSE
 
